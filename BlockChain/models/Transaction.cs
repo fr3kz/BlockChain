@@ -43,6 +43,5 @@ public class Transaction
     public override string ToString()
     {
         return $"{Sender} sent {Amount} to {Receiver} at {TimeStamp}";
-
     }
 }

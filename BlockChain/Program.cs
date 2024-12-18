@@ -1,39 +1,73 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using System.Security.Cryptography;
+using BlockChain.models;
+using System.Threading.Tasks;
 
-using System.Security.Cryptography;
+namespace BlockChain;
 
-Console.WriteLine("Hello, World!");
-
-var blockchain = new BlockChain.models.BlockChain(2);
-
-
-RSAParameters alicePrivateKey = blockchain.GetOrCreateWallet("Alice");
-RSAParameters bobPrivateKey = blockchain.GetOrCreateWallet("Bob");
-
-
-blockchain.AddBlock(new BlockChain.models.Block(1, DateTime.Now, new List<BlockChain.models.Transaction>
+class Program
 {
-    new BlockChain.models.Transaction("Alice", "Bob", 10, alicePrivateKey),
-    new BlockChain.models.Transaction("Bob", "Charlie", 5, bobPrivateKey)
-}, blockchain.GetLatestBlock().Hash));
-
-
-blockchain.AddBlock(new BlockChain.models.Block(2, DateTime.Now, new List<BlockChain.models.Transaction>
-{
-    new BlockChain.models.Transaction("Charlie", "Alice", 2, blockchain.GetOrCreateWallet("Charlie"))
-}, blockchain.GetLatestBlock().Hash));
-
-
-foreach (var block in blockchain)
-{
-    Console.WriteLine($"Block: {block.Index}, Hash: {block.Hash}");
-    foreach (var transaction in block.Transactions)
+    static async Task Main(string[] args)
     {
-        Console.WriteLine(transaction);
+        Console.WriteLine("Blockchain with Dynamic Transactions!");
+
+        var blockchain = new models.BlockChain(2);
+        blockchain.GetOrCreateWallet("Alice");
+        blockchain.GetOrCreateWallet("Bob");
+        blockchain.GetOrCreateWallet("Charlie");
+        blockchain.AddStake("Alice", 50); 
+        blockchain.AddStake("Bob", 30);
+        blockchain.AddStake("Charlie", 20);
+
+        blockchain.AddBlock(new Block(0, DateTime.Now, new List<Transaction>(), null));
+        Task.Run(() => AddDynamicTransactions(blockchain));
+
+        while (true)
+        {
+            Console.Clear();
+            Console.WriteLine("Current Blockchain State:");
+            foreach (var block in blockchain)
+            {
+                Console.WriteLine($"Block: {block.Index}, Hash: {block.Hash}");
+                foreach (var transaction in block.Transactions)
+                {
+                    Console.WriteLine(transaction);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine($"Is Blockchain Valid: {blockchain.IsValidChain()}");
+
+            await Task.Delay(5000);
+        }
     }
-    Console.WriteLine();
+
+    static async Task AddDynamicTransactions(BlockChain.models.BlockChain blockchain)
+    {
+        Random random = new Random();
+        List<string> participants = new List<string> { "Alice", "Bob", "Charlie" };
+
+        int counter = 0;
+
+        while (true)
+        {
+            await Task.Delay(3000);
+
+            string sender = participants[random.Next(participants.Count)];
+            string receiver = participants[random.Next(participants.Count)];
+            while (receiver == sender)
+            {
+                receiver = participants[random.Next(participants.Count)];
+            }
+
+            decimal amount = random.Next(1, 100);
+            RSAParameters senderPrivateKey = blockchain.GetOrCreateWallet(sender);
+
+            var newBlock = new Block(counter + 1, DateTime.Now, new List<Transaction>
+            {
+                new Transaction(sender, receiver, amount, senderPrivateKey)
+            }, blockchain.GetLatestBlock().Hash);
+
+            blockchain.AddBlock(newBlock);
+            counter++;
+        }
+    }
 }
-
-
-Console.WriteLine($"Is Blockchain Valid: {blockchain.IsValidChain()}");
-Console.ReadLine();

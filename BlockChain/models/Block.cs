@@ -9,7 +9,7 @@ public class Block
     public DateTime Timestamp { get; }
     public List<Transaction> Transactions { get; }
     public string PreviousHash { get; set; }
-    public string Hash { get; private set; }
+    public string Hash { get;  set; }
     private int Nonce { get; set; }
 
     public Block(int index, DateTime timestamp, List<Transaction> transactions,string previousHash)
